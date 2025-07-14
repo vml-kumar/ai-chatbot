@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -8,6 +8,7 @@ import {
   IconButton,
   Paper,
   Container,
+  Chip,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
@@ -15,34 +16,56 @@ import {
   sendMessage,
   setInput,
   setProvider,
+  fetchChatHistory,
 } from '@/redux/slices/chatSlice';
+import promptSuggestions from '@/data/promptSuggestions';
 
 const ChatBox = () => {
   const dispatch = useAppDispatch();
-  const { messages, input, provider, loading } = useAppSelector(
+  const { messages, input, provider, loading, chatLoaded } = useAppSelector(
     (state) => state.chat
   );
+  const { uid } = useAppSelector((state) => state.auth);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  
   const handleSend = () => {
     if (input.trim()) {
       dispatch(sendMessage(input));
+      dispatch(setInput(''));
     }
   };
+
+  const handleSuggestionClick = (text: string) => {
+    dispatch(setInput(text));
+  };
+
+  useEffect(() => {
+    if (uid) {
+      dispatch(fetchChatHistory(uid));
+    }
+  }, [uid, dispatch]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Shuffle suggestions each time (memoized)
+  const randomSuggestions = useMemo(() => {
+    return promptSuggestions
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 4);
+  }, []);
+  
+
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Paper elevation={3} sx={{ p: 4, minHeight: '80vh' }}>
-        <Typography variant="h4" gutterBottom>
-          AI Chatbot
-        </Typography>
-
-        <Box display="flex" justifyContent="flex-end" mb={2}>
+        {/* Top Bar */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h5" fontWeight="bold">
+            {/* Empty to avoid duplicate title */}
+          </Typography>
           <Select
             size="small"
             value={provider}
@@ -55,6 +78,7 @@ const ChatBox = () => {
           </Select>
         </Box>
 
+        {/* Chat Area */}
         <Box
           sx={{
             height: '50vh',
@@ -69,6 +93,25 @@ const ChatBox = () => {
             bgcolor: 'background.paper',
           }}
         >
+          {(!uid || (chatLoaded && messages.length === 0)) && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                🤖 Try one of these prompts:
+              </Typography>
+              <Box display="flex" gap={1} flexWrap="wrap">
+                {randomSuggestions.map((suggestion, index) => (
+                  <Chip
+                    key={index}
+                    label={suggestion}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    clickable
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
           {messages.map((msg, idx) => (
             <Box
               key={idx}
@@ -107,6 +150,7 @@ const ChatBox = () => {
           <div ref={messagesEndRef} />
         </Box>
 
+        {/* Input */}
         <Box display="flex" gap={2}>
           <TextField
             fullWidth

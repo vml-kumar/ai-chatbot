@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axios from '@/utils/axios';
+import { RootState } from '@/redux/store';
 
 interface Message {
   role: 'user' | 'ai';
@@ -13,6 +14,7 @@ interface ChatState {
   error: string | null;
   provider: 'openai' | 'mistral';
   input: string;
+  chatLoaded: boolean;
 }
 
 const initialState: ChatState = {
@@ -20,26 +22,43 @@ const initialState: ChatState = {
   loading: false,
   error: null,
   provider: 'mistral',
-  input: ''
+  input: '',
+  chatLoaded: false,
 };
 
 export const sendMessage = createAsyncThunk<
   string,
   string,
-  { state: { chat: ChatState } }
+  { state: RootState }
 >('chat/sendMessage', async (message, { getState, rejectWithValue }) => {
-  const provider = getState().chat.provider;
-
+  const { provider, input } = getState().chat;
+  const { uid, email } = getState().auth;
   try {
     const res = await axios.post('/chat', {
       message,
       provider,
+      userId: uid || null,
+      email: email || null,
     });
     return res.data.reply;
   } catch (err: any) {
     return rejectWithValue(err.response?.data?.error || 'Something went wrong');
   }
 });
+
+export const fetchChatHistory = createAsyncThunk<
+  Message[],
+  string, // userId
+  { state: RootState }
+>('chat/fetchHistory', async (userId, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`/chat-history?userId=${userId}`);
+    return res.data.messages;
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data?.error || 'Failed to load history');
+  }
+});
+
 
 const chatSlice = createSlice({
   name: 'chat',
@@ -54,6 +73,7 @@ const chatSlice = createSlice({
     resetChat(state) {
       state.messages = [];
       state.error = null;
+      state.chatLoaded = false;
     },
   },
   extraReducers: (builder) => {
@@ -70,6 +90,10 @@ const chatSlice = createSlice({
       .addCase(sendMessage.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchChatHistory.fulfilled, (state, action) => {
+        state.messages = action.payload;
+        state.chatLoaded = true;
       });
   },
 });
