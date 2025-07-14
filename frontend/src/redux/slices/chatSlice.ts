@@ -74,5 +74,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setProvider, resetChat } = chatSlice.actions;
+export const { setProvider, setInput, resetChat } = chatSlice.actions;
 export default chatSlice.reducer;
