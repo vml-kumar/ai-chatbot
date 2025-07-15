@@ -11,6 +11,7 @@ import {
   Typography,
   Button,
   Box,
+  useMediaQuery,
 } from '@mui/material';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
@@ -18,6 +19,7 @@ import { useAppSelector, useAppDispatch } from './redux/hooks';
 import { auth } from './firebase/firebase';
 import { clearUser } from './redux/slices/authSlice';
 import { resetChat } from './redux/slices/chatSlice';
+import { useTheme } from '@mui/material/styles';
 
 interface AppProps {
   toggleTheme: () => void;
@@ -28,6 +30,8 @@ const App: React.FC<AppProps> = ({ toggleTheme, darkMode }) => {
   const user = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -44,30 +48,60 @@ const App: React.FC<AppProps> = ({ toggleTheme, darkMode }) => {
 
   return (
     <>
-      {/* Fixed Top Header */}
+      {/* Top Header */}
       <AppBar position="fixed" color="default" elevation={2}>
-        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Toolbar sx={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
           <Box display="flex" alignItems="center" gap={2}>
-            <Typography variant="h6" fontWeight={600}>
-              <img src={logo} alt="Logo" style={{ height: 40 }} />
-            </Typography>
+            <img src={logo} alt="Logo" style={{ height: 40 }} />
           </Box>
 
-          <Box display="flex" alignItems="center" gap={2}>
-              <Tooltip title="Toggle theme">
-                <IconButton onClick={toggleTheme}>
-                  {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-                </IconButton>
-              </Tooltip>
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1}
+            flexWrap="wrap"
+            justifyContent="flex-end"
+            sx={{ maxWidth: '100%' }}
+          >
+            <Tooltip title="Toggle theme">
+              <IconButton onClick={toggleTheme}>
+                {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </Tooltip>
+
             {isLoggedIn ? (
               <>
-                <Typography variant="body2">{user.email}</Typography>
-                <Button variant="outlined" color="error" onClick={handleLogout}>
+                <Tooltip title={user.email}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      maxWidth: { xs: 120, sm: 200 },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {user.email}
+                  </Typography>
+                </Tooltip>
+
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={handleLogout}
+                  sx={{ textTransform: 'none' }}
+                >
                   Logout
                 </Button>
               </>
             ) : (
-              <Button variant="contained" onClick={handleLoginRedirect}>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleLoginRedirect}
+                sx={{ textTransform: 'none' }}
+              >
                 Login
               </Button>
             )}

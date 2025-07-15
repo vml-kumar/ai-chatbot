@@ -52,7 +52,6 @@ const ChatBox = () => {
   }
   `;
 
-
   useEffect(() => {
     if (uid) {
       dispatch(fetchChatHistory(uid));
