@@ -41,7 +41,7 @@ export const getAIResponse = async (
         {
           headers: {
             Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'http://localhost:5173/',
+           'HTTP-Referer': process.env.OPENROUTER_REFERER,
             'X-Title': 'AI Chatbot',
           },
         }
