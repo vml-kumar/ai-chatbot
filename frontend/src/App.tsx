@@ -17,6 +17,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useAppSelector, useAppDispatch } from './redux/hooks';
 import { auth } from './firebase/firebase';
 import { clearUser } from './redux/slices/authSlice';
+import { resetChat } from './redux/slices/chatSlice';
 
 interface AppProps {
   toggleTheme: () => void;
@@ -31,6 +32,7 @@ const App: React.FC<AppProps> = ({ toggleTheme, darkMode }) => {
   const handleLogout = async () => {
     await auth.signOut();
     dispatch(clearUser());
+    dispatch(resetChat());
     navigate('/');
   };
 

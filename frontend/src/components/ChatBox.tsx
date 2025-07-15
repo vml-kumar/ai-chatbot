@@ -19,6 +19,7 @@ import {
   fetchChatHistory,
 } from '@/redux/slices/chatSlice';
 import promptSuggestions from '@/data/promptSuggestions';
+import { keyframes } from '@emotion/react';
 
 const ChatBox = () => {
   const dispatch = useAppDispatch();
@@ -28,7 +29,7 @@ const ChatBox = () => {
   const { uid } = useAppSelector((state) => state.auth);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const handleSend = () => {
     if (input.trim()) {
       dispatch(sendMessage(input));
@@ -40,6 +41,18 @@ const ChatBox = () => {
     dispatch(setInput(text));
   };
 
+  const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+  `;
+
+
   useEffect(() => {
     if (uid) {
       dispatch(fetchChatHistory(uid));
@@ -50,22 +63,19 @@ const ChatBox = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Shuffle suggestions each time (memoized)
   const randomSuggestions = useMemo(() => {
-    return promptSuggestions
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 4);
+    return promptSuggestions.sort(() => 0.5 - Math.random()).slice(0, 4);
   }, []);
-  
+
+  const shouldShowPrompts =
+    (!uid && messages.length === 0) || (uid && chatLoaded && messages.length === 0);
 
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Paper elevation={3} sx={{ p: 4, minHeight: '80vh' }}>
         {/* Top Bar */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h5" fontWeight="bold">
-            {/* Empty to avoid duplicate title */}
-          </Typography>
+          <Typography variant="h5" fontWeight="bold"></Typography>
           <Select
             size="small"
             value={provider}
@@ -93,7 +103,7 @@ const ChatBox = () => {
             bgcolor: 'background.paper',
           }}
         >
-          {(!uid || (chatLoaded && messages.length === 0)) && (
+          {shouldShowPrompts && (
             <Box>
               <Typography variant="subtitle1" gutterBottom>
                 🤖 Try one of these prompts:
@@ -105,8 +115,14 @@ const ChatBox = () => {
                     label={suggestion}
                     onClick={() => handleSuggestionClick(suggestion)}
                     clickable
-                    sx={{ cursor: 'pointer' }}
+                    sx={{
+                      cursor: 'pointer',
+                      animation: `${fadeIn} 0.4s ease-out`,
+                      animationDelay: `${index * 0.1}s`,
+                      animationFillMode: 'both',
+                    }}
                   />
+
                 ))}
               </Box>
             </Box>
